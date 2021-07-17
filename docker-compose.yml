@@ -1,0 +1,65 @@
+version: "3"
+
+services:
+    # nginx service
+    server:
+        image: nginx:alpine
+        container_name: test_docker_server
+        restart: unless-stopped
+        tty: true
+        ports:
+            - "8080:80"
+            - "445:443"
+        volumes:
+            - ./:/var/www/test_docker
+            - ./docker/nginx/conf.d/:/etc/nginx/conf.d/
+        networks:
+            - app-network
+
+    # mysql
+    database:
+        image: mysql:8.0.25
+        container_name: test_docker_database
+        restart: unless-stopped
+        tty: true
+        ports:
+            - "3308:3306"
+        environment:
+            MYSQL_DATABASE: test_docker
+            MYSQL_USER: quangha
+            MYSQL_PASSWORD: quangha2611
+            MYSQL_ROOT_PASSWORD: quangha2611
+            SERVICE_TAGS: dev
+            SERVICE_NAME: mysql
+        volumes:
+            - mysqldb:/var/lib/mysql
+            - ./docker/mysql/mysql.conf:/etc/mysql/mysql.conf
+        networks:
+            - app-network
+
+    # php-fmp service
+    php:
+        build:
+            context: .
+            dockerfile: ./docker/Dockerfile
+        image: test_docker
+        container_name: test_docker_php
+        restart: unless-stopped
+        tty: true
+        ports:
+            - "9000:9000"
+        volumes:
+            - ./:/var/www/test_docker
+            - ./php/local.ini:/usr/local/etc/php/conf.d/local.ini
+        networks:
+            - app-network
+
+#Docker volumes
+volumes :
+    mysqldb:
+        driver: local
+            
+#Docker Networks
+networks:
+    app-network:
+        driver: bridge
